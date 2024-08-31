@@ -12,7 +12,6 @@
 # 04             25-Jul-2024   Krushna B.     Added new departments - Insurance and Legal
 # 05             13-Aug-2024   Krushna B.     Added logic for Speech to Text
 # 06             20-Aug-2024   Krushna B.     Changed Manufacturing to Inventory and added more tables inside it           
-# 07             28-Aug-2024   Krushna B.     Added data for Adventureworks
 #**********************************************************************************************#
 import streamlit as st
 from streamlit_mic_recorder import mic_recorder, speech_to_text
@@ -151,20 +150,58 @@ with tab2:
     if "selected_subject" not in st.session_state:
        st.session_state.selected_subject = subject_areas[0]
     if "previous_subject" not in st.session_state:
-       st.session_state.previous_subject = ""
-    configure.selected_subject = st.selectbox("**Select a Subject Area**", subject_areas, index=subject_areas.index(st.session_state.selected_subject))
-    
-    
+       st.session_state.previous_subject = subject_areas[0]
+    # configure.selected_subject = st.selectbox("**Select a Subject Area**", subject_areas, index=subject_areas.index(st.session_state.selected_subject))
+    # print("lll",configure.selected_subject)
+
+     # Create a selectbox for section selection
+    sub = st.selectbox("**Select a subject area**", subject_areas, key="sub_selectbox")
+    # Call admin_operations based on the selected section
+    if sub in subject_areas:
+        index = subject_areas.index(sub)
+    configure.selected_subject=sub    
+    print("lll",configure.selected_subject)
+
    
     if configure.selected_subject != st.session_state.previous_subject:
         
-      st.session_state.messages = []
-      st.session_state.response = None
-      #st.session_state.tables_data = {}
-      st.session_state.selected_subject = configure.selected_subject
-      table_details = get_table_details()
+        st.session_state.messages = []
+        print("1",st.session_state.messages)
+        st.session_state.response = None
+        print("2",st.session_state.response)
+        st.session_state.chosen_tables = []
+        print("3",st.session_state.chosen_tables)
+        st.session_state.tables_data = {}
+        print("4",st.session_state.tables_data)
+        st.session_state.user_prompt = ""
+        print("5",st.session_state.user_prompt)
+        st.session_state.generated_query = ""
+        print("6",st.session_state.generated_query)
+        
+        
+        # Update the subject
+        st.session_state.selected_subject = configure.selected_subject
+        print("ist configure",st.session_state.selected_subject)
+        st.session_state.previous_subject = st.session_state.selected_subject
+        print("2nd configure",st.session_state.previous_subject)
+        
+
+        
+        # Load new table details for the selected subject
+        table_details = get_table_details()
+        tables = [line.split("Table Name:")[1].strip() for line in table_details.split("\n") if "Table Name:" in line]
+    else:
+        table_details = get_table_details()
+        tables = [line.split("Table Name:")[1].strip() for line in table_details.split("\n") if "Table Name:" in line]
+        
+
+        
+    #   st.session_state.messages = []
+    #   st.session_state.response = None
+    #   #st.session_state.tables_data = {}
+    #   st.session_state.selected_subject = configure.selected_subject
+    #   table_details = get_table_details()
     # Display the selected subject area
-    tables = [line.split("Table Name:")[1].strip() for line in table_details.split("\n") if "Table Name:" in line]
 
     st.write(f"**_You selected: {st.session_state.selected_subject}_**")
     st.write(f"**_Number of tables in {st.session_state.selected_subject}: {len(tables)}_**")
@@ -231,9 +268,9 @@ with tab2:
     for message in st.session_state.messages:
        with st.chat_message(message["role"]):
            st.markdown(message["content"])
-    selected_subject_input = "What you would like to know about : Subject area - ", configure.selected_subject, "?" 
-    print(' '.join(selected_subject_input))
+    selected_subject_input = "What you would like to know  : Subject area - ", configure.selected_subject, "?" 
     selected_subject_final = ' '.join(selected_subject_input)
+    print(selected_subject_final)
     st.write("**Click start recording to speak:**")
     text = whisper_stt(openai_api_key=OPENAI_API_KEY, language='en')    
 
@@ -257,7 +294,7 @@ with tab2:
             # st.markdown(x)
             #st.markdown(response["query"])
             #st.markdown(f"**Relevant Tables: {', '.join(chosen_tables)}**")
-        st.session_state.messages.append({"role": "assistant", "content": response})
+        st.session_state.messages.append({"role": "assistant", "content": response["query"]})
     elif prompt := text:
         #st.session_state.user_prompt = prompt
         st.session_state.messages.append({"role": "user", "content": prompt})
@@ -279,10 +316,9 @@ with tab2:
             # st.markdown(x)
             #st.markdown(response["query"])
             #st.markdown(f"*Relevant Tables:* {', '.join(chosen_tables)}")
-        st.session_state.messages.append({"role": "assistant", "content": response})
+        st.session_state.messages.append({"role": "assistant", "content": response["query"]})
     else:
-       #st.error("The input prompt is empty. Please enter a valid question.")
-       pass
+        pass
     if st.button("Clear"):
         st.session_state.clear()
         st.experimental_rerun()
@@ -333,7 +369,7 @@ with tab2:
                     feedback_text = st.text_input(f"**Provide feedback here**", key=f"feedback_{table}")
                     st.session_state.feedback_text[table] = feedback_text
                     if not data.empty:
-                        x_axis = st.selectbox(f"**Select X-axis for {table}**", data.columns, key=f"x_axis_{table}")
+                        x_axis = st.selectbox(f"## **Select X-axis for {table}**", data.columns, key=f"x_axis_{table}")
                         y_axis = st.selectbox(f"**Select Y-axis for {table}**", data.columns, key=f"y_axis_{table}")
                         chart_type = st.selectbox(
                             f"**Select Chart Type for {table}**", 
