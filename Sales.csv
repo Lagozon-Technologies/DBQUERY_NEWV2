@@ -67,3 +67,11 @@ lz_foods,"This table contains information about the various datas like old_app_i
     kiosk takeaway order ,
     old app android takeaway sales ,
     business month "
+lz_sales_areas,"This table Contains information about different sales areas, including their names, regions, countries, and assigned managers."
+lz_sales_representatives,"This table Stores data about sales representatives, such as their names, contact information, hire dates, and assigned sales areas."
+lz_sales_rep_sales_area,"This table Associates sales representatives with specific sales areas, creating a many-to-many relationship between the two."
+lz_sales_quotas,"This table Defines sales quotas for sales representatives or sales areas, including quota amounts and target periods."
+lz_sales_targets,"This table Sets specific goals or objectives for sales representatives or sales areas, such as revenue targets or unit sales targets."
+lz_sales_history,"This table Records historical sales data, including sales dates, products sold, quantities, and revenue."
+lz_sales_promotions,"This table Stores information about sales promotions or campaigns, including promotion names, start dates, end dates, discounts, and descriptions."
+lz_pricing_rules,"This table Defines pricing rules or discounts that apply to specific products, customers, or sales areas, based on certain conditions."

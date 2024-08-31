@@ -294,7 +294,7 @@ with tab2:
             # st.markdown(x)
             #st.markdown(response["query"])
             #st.markdown(f"**Relevant Tables: {', '.join(chosen_tables)}**")
-        st.session_state.messages.append({"role": "assistant", "content": response["query"]})
+        st.session_state.messages.append({"role": "assistant", "content":st.session_state.generated_query })
     elif prompt := text:
         #st.session_state.user_prompt = prompt
         st.session_state.messages.append({"role": "user", "content": prompt})
@@ -316,7 +316,7 @@ with tab2:
             # st.markdown(x)
             #st.markdown(response["query"])
             #st.markdown(f"*Relevant Tables:* {', '.join(chosen_tables)}")
-        st.session_state.messages.append({"role": "assistant", "content": response["query"]})
+        st.session_state.messages.append({"role": "assistant", "content":st.session_state.generated_query })
     else:
         pass
     if st.button("Clear"):

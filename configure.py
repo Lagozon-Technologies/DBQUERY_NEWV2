@@ -17,5 +17,5 @@ gauge_config = {
     "Relevancy": {"value": 82, "color": "lightgreen"},
     "Precision": {"value": 80, "color": "yellow"},
     "Recall": {"value": 78, "color": "orange"},
-    "Harmfulness": {"value": 15, "color": "red"}
+    "Harmfulness": {"value": 15, "color": "green"}
 }
