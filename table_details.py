@@ -12,7 +12,7 @@
 # 04             25-Jul-2024   Krushna B.     Added new departments - Insurance and Legal
 # 05             13-Aug-2024   Krushna B.     Added logic for Speech to Text
 # 06             20-Aug-2024   Krushna B.     Changed Manufacturing to Inventory and added more tables inside it           
-# 07             28-Aug-2024   Krushna B.     Added data for Adventureworks
+# 07             20-Sep-2024   Krushna B.     Changes done for Prompts 
 #**********************************************************************************************#
 #from tkinter.messagebox import QUESTION
 import pandas as pd
@@ -62,11 +62,11 @@ def get_tables(tables: List[Table]) -> List[str]:
 table_details = get_table_details()
 print("testinf details",table_details, type(table_details))
 table_details_prompt = f"""Return the names of ALL the SQL tables that MIGHT be relevant to the user question. \
-The tables are:
+    The permissible tables names are listed below and must be strictly followed:
 
-{table_details}
+    {table_details}
 
-Remember to include ALL POTENTIALLY RELEVANT tables, even if you're not sure that they're needed."""
+    Remember to include ALL POTENTIALLY RELEVANT tables, even if you're not sure that they're needed."""
 print("Table_details_prompt: ", table_details_prompt)
 table_chain = {"input": itemgetter("question")} | create_extraction_chain_pydantic(Table, llm, system_message=table_details_prompt) | get_tables
 # mock_question_test = "How many product view by products in last week"

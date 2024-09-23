@@ -12,7 +12,6 @@
 # 04             25-Jul-2024   Krushna B.     Added new departments - Insurance and Legal
 # 05             13-Aug-2024   Krushna B.     Added logic for Speech to Text
 # 06             20-Aug-2024   Krushna B.     Changed Manufacturing to Inventory and added more tables inside it           
-# 07             28-Aug-2024   Krushna B.     Added data for Adventureworks
 # **********************************************************************************************#
 
 from examples import get_example_selector

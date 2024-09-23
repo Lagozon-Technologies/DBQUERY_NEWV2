@@ -12,6 +12,7 @@
 # 04             25-Jul-2024   Krushna B.     Added new departments - Insurance and Legal
 # 05             13-Aug-2024   Krushna B.     Added logic for Speech to Text
 # 06             20-Aug-2024   Krushna B.     Changed Manufacturing to Inventory and added more tables inside it           
+# 07             20-Sep-2024   Krushna B.     Changes done for Prompts 
 #**********************************************************************************************#
 import streamlit as st
 from streamlit_mic_recorder import mic_recorder, speech_to_text
@@ -155,7 +156,7 @@ with tab2:
     # print("lll",configure.selected_subject)
 
      # Create a selectbox for section selection
-    sub = st.selectbox("**Select a subject area**", subject_areas, key="sub_selectbox")
+    sub = st.selectbox("**Select section**", subject_areas, key="sub_selectbox")
     # Call admin_operations based on the selected section
     if sub in subject_areas:
         index = subject_areas.index(sub)
@@ -166,24 +167,16 @@ with tab2:
     if configure.selected_subject != st.session_state.previous_subject:
         
         st.session_state.messages = []
-        print("1",st.session_state.messages)
         st.session_state.response = None
-        print("2",st.session_state.response)
         st.session_state.chosen_tables = []
-        print("3",st.session_state.chosen_tables)
         st.session_state.tables_data = {}
-        print("4",st.session_state.tables_data)
         st.session_state.user_prompt = ""
-        print("5",st.session_state.user_prompt)
         st.session_state.generated_query = ""
-        print("6",st.session_state.generated_query)
         
         
         # Update the subject
         st.session_state.selected_subject = configure.selected_subject
-        print("ist configure",st.session_state.selected_subject)
         st.session_state.previous_subject = st.session_state.selected_subject
-        print("2nd configure",st.session_state.previous_subject)
         
 
         
@@ -243,15 +236,17 @@ with tab2:
        return output
     def voting_interface(table_name):
         votes = load_votes(table_name)
-
+        feedback_inserted = False
         col1, col2, col3, col4, col5, col6= st.columns(6)
-
+        
         with col1:
             if st.button(f"👍{votes['upvotes']}"):
                 votes["upvotes"] += 1
                 save_votes(table_name, votes)
                 insert_feedback(configure.selected_subject, st.session_state.user_prompt, st.session_state.generated_query, table_name, data, "like", st.session_state.feedback_text.get(table_name, ""))
+                feedback_inserted = True
                 st.experimental_rerun()
+                return 1
 
         # with col2:
         #     st.write(f"Upvotes: {votes['upvotes']}")
@@ -262,7 +257,10 @@ with tab2:
                 votes["downvotes"] += 1
                 save_votes(table_name, votes)
                 insert_feedback(configure.selected_subject, st.session_state.user_prompt, st.session_state.generated_query, table_name, data, "dislike", st.session_state.feedback_text.get(table_name, ""))
+                feedback_inserted = True
                 st.experimental_rerun()
+                return 1
+        return feedback_inserted 
 
     # Display chat messages from history on app rerun
     for message in st.session_state.messages:
@@ -283,7 +281,7 @@ with tab2:
         with st.spinner("Generating response..."):
             response, chosen_tables, tables_data, agent_executor = invoke_chain(prompt, st.session_state.messages, st.session_state.selected_model)
             if isinstance(response, str):
-                st.session_state.generated_query = ""  # Or handle it accordingly
+                st.session_state.generated_query = "The above asked information does not belong to the selected subject area."  # Or handle it accordingly
             else:
                 st.session_state.chosen_tables = chosen_tables
                 st.session_state.tables_data = tables_data
@@ -295,6 +293,7 @@ with tab2:
             #st.markdown(response["query"])
             #st.markdown(f"**Relevant Tables: {', '.join(chosen_tables)}**")
         st.session_state.messages.append({"role": "assistant", "content":st.session_state.generated_query })
+
     elif prompt := text:
         #st.session_state.user_prompt = prompt
         st.session_state.messages.append({"role": "user", "content": prompt})
@@ -304,7 +303,7 @@ with tab2:
         with st.spinner("Generating response..."):
             response, chosen_tables, tables_data, agent_executor = invoke_chain(prompt, st.session_state.messages, st.session_state.selected_model)
             if isinstance(response, str):
-                st.session_state.generated_query = ""  # Or handle it accordingly
+                st.session_state.generated_query = "The above asked information does not belong to the selected subject area."  # Or handle it accordingly
             else:
                 st.session_state.chosen_tables = chosen_tables
                 st.session_state.tables_data = tables_data
@@ -317,6 +316,7 @@ with tab2:
             #st.markdown(response["query"])
             #st.markdown(f"*Relevant Tables:* {', '.join(chosen_tables)}")
         st.session_state.messages.append({"role": "assistant", "content":st.session_state.generated_query })
+
     else:
         pass
     if st.button("Clear"):
@@ -344,7 +344,8 @@ with tab2:
         # Use st.markdown to display the styled HTML table
         st.markdown(f"**Data from {table_name}:**", unsafe_allow_html=True)
         st.markdown(styled_table, unsafe_allow_html=True)
-
+          
+        
 
         
     if "response" in st.session_state and "tables_data" in st.session_state:
@@ -354,7 +355,8 @@ with tab2:
             for table, data in st.session_state.tables_data.items():
                     #st.markdown(f"**Data from {table}:**")
                     display_table_with_styles(data, table)
-                    
+                    print("This is data:",data)
+                    print("This is table:",table)
                     excel_data = download_as_excel(data)
                     st.download_button(
                             label="Download as Excel",
@@ -365,7 +367,11 @@ with tab2:
 
 
                     st.markdown("**Was this response helpful?**")
+                    print("hello this is my queryyyyy", st.session_state.generated_query)
                     voting_interface(table)
+                    # if not feedback_inserted:  # No vote was cast
+                    #     print("hi")
+                    #     insert_feedback(configure.selected_subject, st.session_state.user_prompt, st.session_state.generated_query, table, data, "", st.session_state.feedback_text.get(table, ""))
                     feedback_text = st.text_input(f"**Provide feedback here**", key=f"feedback_{table}")
                     st.session_state.feedback_text[table] = feedback_text
                     if not data.empty:

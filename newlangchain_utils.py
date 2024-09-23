@@ -12,7 +12,7 @@
 # 04             25-Jul-2024   Krushna B.     Added new departments - Insurance and Legal
 # 05             13-Aug-2024   Krushna B.     Added logic for Speech to Text
 # 06             20-Aug-2024   Krushna B.     Changed Manufacturing to Inventory and added more tables inside it           
-# 07             28-Aug-2024   Krushna B.     Added data for Adventureworks
+# 07             20-Sep-2024   Krushna B.     Changes done for Prompts 
 # **********************************************************************************************#
 import os
 import pandas as pd
@@ -30,6 +30,10 @@ db_port=os.getenv("db_port")
 db_schema= os.getenv("db_schema")
 adv_db_database = os.getenv("adv_db_database") 
 adv_db_schema = os.getenv("adv_db_schema")
+adv_db_schema_hr = os.getenv("adv_db_schema_hr")
+adv_db_schema_pe = os.getenv("adv_db_schema_pe")
+adv_db_schema_purchase = os.getenv("adv_db_schema_purchase")
+adv_db_schema_sales = os.getenv("adv_db_schema_sales")
 # Change if your schema is different
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # LANGCHAIN_TRACING_V2 = os.getenv("LANGCHAIN_TRACING_V2")
@@ -71,12 +75,13 @@ def get_chain(question, _messages, selected_model):
     #db = SQLDatabase.from_uri(f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}")  
     table_details = get_table_details()
     table_details_prompt = f"""Return the names of ALL the SQL tables that MIGHT be relevant to the user question. \
-    The tables are:
+    The permissible tables names are listed below and must be strictly followed:
+
 
     {table_details}
 
     Remember to include ALL POTENTIALLY RELEVANT tables, even if you're not sure that they're needed."""
-    print("From utis.py Table_details_prompt: ", table_details_prompt)
+    print("From utils.py Table_details_prompt: ", table_details_prompt)
     table_chain = {"input": itemgetter("question")} | create_extraction_chain_pydantic(Table, llm, system_message=table_details_prompt) | get_tables
     
 
@@ -92,15 +97,54 @@ def get_chain(question, _messages, selected_model):
     
     #Changed by Rama
     if st.session_state.selected_subject.startswith('Adv'):
+        if st.session_state.selected_subject.endswith('(HR)'):
     # if configure.selected_subject.startswith('Adv'):
-        db = SQLDatabase.from_uri(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{adv_db_database}'
-                             ,schema=adv_db_schema
-                             ,include_tables= chosen_tables
-                             , view_support=True
-                             ,sample_rows_in_table_info=1
-                             ,lazy_table_reflection=True
-                              )
-        print("DB Connection Done for Adventureworks----",db._schema)
+            db = SQLDatabase.from_uri(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{adv_db_database}'
+                                ,schema=adv_db_schema_hr
+                                ,include_tables= chosen_tables
+                                , view_support=True
+                                ,sample_rows_in_table_info=1
+                                ,lazy_table_reflection=True
+                                )
+            print("DB Connection Done for Adventureworks----",db._schema)
+        elif st.session_state.selected_subject.endswith('Person'):
+            db = SQLDatabase.from_uri(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{adv_db_database}'
+                    ,schema=adv_db_schema_pe
+                    ,include_tables= chosen_tables
+                    , view_support=True
+                    ,sample_rows_in_table_info=1
+                    ,lazy_table_reflection=True
+                    )
+            print("DB Connection Done for Adventureworks----",db._schema)
+        elif st.session_state.selected_subject.endswith('Purchasing'):
+            db = SQLDatabase.from_uri(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{adv_db_database}'
+                    ,schema=adv_db_schema_purchase
+                    ,include_tables= chosen_tables
+                    , view_support=True
+                    ,sample_rows_in_table_info=1
+                    ,lazy_table_reflection=True
+                    )
+            print("DB Connection Done for Adventureworks----",db._schema)
+        elif st.session_state.selected_subject.endswith('Sales'):
+            db = SQLDatabase.from_uri(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{adv_db_database}'
+                    ,schema=adv_db_schema_sales
+                    ,include_tables= chosen_tables
+                    , view_support=True
+                    ,sample_rows_in_table_info=1
+                    ,lazy_table_reflection=True
+                    )
+            print("DB Connection Done for Adventureworks----",db._schema)
+
+        else:
+            db = SQLDatabase.from_uri(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{adv_db_database}'
+                                ,schema=adv_db_schema
+                                ,include_tables= chosen_tables
+                                , view_support=True
+                                ,sample_rows_in_table_info=1
+                                ,lazy_table_reflection=True
+                                )
+            print("DB Connection Done for Adventureworks----",db._schema)
+            
     else:
         db = SQLDatabase.from_uri(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_database}'
                              ,schema=db_schema
@@ -157,7 +201,6 @@ def invoke_chain(question, messages, selected_model):
             print("Printing the response: ... ", response)
             print("Printing the chosen tables: ... ", chosen_tables)
             if configure.selected_subject.startswith('Adv'):
-            
                 alchemyEngine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{adv_db_database}')
             else:
                 alchemyEngine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_database}')
@@ -185,25 +228,39 @@ def invoke_chain(question, messages, selected_model):
             return response, chosen_tables, tables_data, db
     except Exception as e:
         #st.error(f"An error occurred: {e}")
-        #print("eeeeeee   ",e)
-        custom_message = "The above asked information does not belong to the selected subject area."
+        print("error   ",e)
+        custom_message = "Insufficient information to generate SQL Query."
+        #st.session_state.generated_query = custom_message
         st.warning(custom_message)
         return custom_message, [], {}, None
         #return None, [], {}, None
 #This change was done on 23/7/24 to keep track of the user's feedback 
-def insert_feedback(department,user_query, sql_query, table_name, data, feedback_type, feedback):
+def escape_single_quotes(input_string):
+    return input_string.replace("'", "''")
+def insert_feedback(department,user_query, sql_query, table_name, data, feedback_type="user not reacted", feedback="user not given feedback"):
     engine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_database}')
     Session = sessionmaker(bind=engine)
     session = Session()
-
+    #sql_query = sql_query.replace("'", "''")
+    department = escape_single_quotes(department)
+    user_query = escape_single_quotes(user_query)
+    sql_query = escape_single_quotes(sql_query)
+    table_name = escape_single_quotes(table_name)
+    data = escape_single_quotes(data)
+    feedback_type = escape_single_quotes(feedback_type)
+    feedback = escape_single_quotes(feedback)
     insert_query = f"""
     INSERT INTO lz_feedbacks (department, user_query, sql_query, table_name, data, feedback_type, feedback)
     VALUES ('{department}', '{user_query}', '{sql_query}', '{table_name}', '{data}', '{feedback_type}', '{feedback}')
     """
-
-    session.execute(insert_query)
-    session.commit()
-    session.close()
+    try:
+        session.execute(insert_query)
+        session.commit()
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        session.rollback()
+    finally:
+        session.close()
 def load_votes(table_name):
     votes = {"upvotes": 0, "downvotes": 0}
     engine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_database}')
